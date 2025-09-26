@@ -10,3 +10,10 @@ Need to install the following packages:
 create-vite@8.0.1
 Ok to proceed? (y) y
 ```
+
+
+- Build gradle locally 
+```
+echo "org.gradle.java.home=/home/$USER/Code/buck-all/opt/jdk21" >> gradle.properties
+./gradlew build
+```

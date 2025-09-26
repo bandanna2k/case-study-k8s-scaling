@@ -2,19 +2,21 @@ plugins {
     id 'java'
 }
 
-group = 'org.example'
-version = '1.0-SNAPSHOT'
+tasks.register('createDistribution', Copy) {
+    dependsOn(":load-generator:jar")
 
-repositories {
-    mavenCentral()
+    from("load-generator/build/libs")
+    into("dist")  // Standard distribution directory
+    include("*.jar")
+
+    doLast {
+        println("Distribution created in: dist/")
+        file("dist").listFiles().each {
+            println("  - ${it.name}")
+        }
+    }
 }
-
-dependencies {
-    testImplementation platform('org.junit:junit-bom:5.10.0')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-}
-
-test {
-    useJUnitPlatform()
+tasks.named('build')
+{
+    dependsOn("createDistribution")
 }

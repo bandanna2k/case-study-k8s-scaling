@@ -1,9 +1,7 @@
 plugins {
     id 'java'
+    id 'application'
 }
-
-group = 'org.example'
-version = '1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
@@ -21,4 +19,24 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+application {
+    mainClass = 'dnt.loadgenerator.Server'
+}
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': application.mainClass.get(),
+                'Implementation-Title': project.name,
+                'Implementation-Version': project.version
+        )
+    }
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
