@@ -5,6 +5,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
+import io.vertx.ext.web.handler.StaticHandler;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -26,6 +27,7 @@ public class Server implements AutoCloseable
     {
         Router router = Router.router(vertx);
         router.route().handler(BodyHandler.create());
+        routeFrontEnd(router);
 
         return vertx.createHttpServer()
                 .requestHandler(router)
@@ -34,6 +36,13 @@ public class Server implements AutoCloseable
                     LOGGER.info("Server started on port " + successfulHttpServer.actualPort());
                 })
                 .onFailure(t -> LOGGER.error("Failed to start server", t));
+    }
+
+    private void routeFrontEnd(Router router)
+    {
+        router.route("/*").handler(StaticHandler.create("dist")
+                        .setCachingEnabled(false)
+                        .setIndexPage("index.html"));
     }
 
     @Override

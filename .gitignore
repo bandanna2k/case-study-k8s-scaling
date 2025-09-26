@@ -40,3 +40,4 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+/load-generator/src/main/resources/dist/
