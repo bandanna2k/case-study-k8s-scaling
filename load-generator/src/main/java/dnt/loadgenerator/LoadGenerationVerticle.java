@@ -1,0 +1,106 @@
+package dnt.loadgenerator;
+
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.Router;
+import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.client.WebClient;
+import io.vertx.ext.web.client.WebClientOptions;
+import io.vertx.ext.web.handler.BodyHandler;
+import io.vertx.ext.web.handler.StaticHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+
+public class LoadGenerationVerticle extends AbstractVerticle
+{
+    private static final Logger LOGGER = LoggerFactory.getLogger(LoadGenerationVerticle.class);
+
+    private final WebClient client;
+
+    private final AtomicLong passCount = new AtomicLong();
+    private final AtomicLong failCount = new AtomicLong();
+    private final Vertx vertx;
+
+    private ScheduledExecutorService executor;
+
+
+    public LoadGenerationVerticle(final Vertx vertx)
+    {
+        this.vertx = vertx;
+
+        final WebClientOptions clientOptions = new WebClientOptions();
+        clientOptions.setConnectTimeout(1_000);
+        clientOptions.setIdleTimeout(5_000);
+        this.client = WebClient.create(vertx, clientOptions);
+    }
+
+    @Override
+    public void start(Promise<Void> startPromise)
+    {
+        Router router = Router.router(vertx);
+        router.route().handler(BodyHandler.create());
+        router.post("/load").handler(this::updateLoadGenerator);
+        routeFrontEnd(router);
+
+        updateLoadGenerator();
+
+        vertx.createHttpServer()
+                .requestHandler(router)
+                .listen(10200)
+                .onSuccess(successfulHttpServer -> {
+                    LOGGER.info("Server started on port " + successfulHttpServer.actualPort());
+                    startPromise.complete();
+                })
+                .onFailure(t -> {
+                    LOGGER.error("Failed to start server", t);
+                    startPromise.fail("Failed to start server");
+                });
+    }
+
+    private void updateLoadGenerator(RoutingContext event)
+    {
+        updateLoadGenerator();
+    }
+    private void updateLoadGenerator()
+    {
+        passCount.set(0);
+        failCount.set(0);
+
+        vertx.setPeriodic(5000, event1 -> {
+            if(failCount.get() > 10)
+            {
+                executor.shutdown();
+                passCount.set(0);
+                failCount.set(0);
+            }
+        });
+
+        executor = Executors.newScheduledThreadPool(100);
+        executor.scheduleAtFixedRate(() -> {
+            client.get(10201, "localhost", "/request")
+                    .send()
+                    .onSuccess(resp -> {
+                        JsonObject jsonObject = resp.bodyAsJsonObject();
+                        LOGGER.info("Response: {}", jsonObject);
+                    })
+                    .onFailure(t -> {
+                        failCount.incrementAndGet();
+                        LOGGER.error("Failed to request");
+                    });
+        }, 0, 5000, TimeUnit.MILLISECONDS);
+    }
+
+    private void routeFrontEnd(Router router)
+    {
+        router.route("/*").handler(StaticHandler.create("dist")
+                .setCachingEnabled(false)
+                .setIndexPage("index.html"));
+    }
+}

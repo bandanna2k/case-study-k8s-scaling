@@ -1,3 +1,7 @@
+# TODO
+
+- Make app generic. JSON file for payload. Config item for default URL
+
 ## Steps
 
 - Created vertx server
