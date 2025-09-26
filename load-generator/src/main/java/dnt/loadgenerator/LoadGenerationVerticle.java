@@ -47,11 +47,9 @@ public class LoadGenerationVerticle extends AbstractVerticle
     {
         Router router = Router.router(vertx);
         router.route().handler(BodyHandler.create());
-        router.get("/status").handler(this::getStatus);
-        router.post("/load").handler(this::updateLoadGenerator);
+        router.get("/v1/status").handler(this::getStatus);
+        router.post("/v1/load").handler(this::updateLoadGenerator);
         routeFrontEnd(router);
-
-        updateLoadGenerator();
 
         vertx.createHttpServer()
                 .requestHandler(router)
@@ -59,6 +57,8 @@ public class LoadGenerationVerticle extends AbstractVerticle
                 .onSuccess(successfulHttpServer -> {
                     LOGGER.info("Server started on port " + successfulHttpServer.actualPort());
                     startPromise.complete();
+
+                    updateLoadGenerator(0.0);
                 })
                 .onFailure(t -> {
                     LOGGER.error("Failed to start server", t);
@@ -76,12 +76,21 @@ public class LoadGenerationVerticle extends AbstractVerticle
         return new Status(passCount.get(), failCount.get(), !executor.isShutdown());
     }
 
-    private void updateLoadGenerator(RoutingContext event)
+    private void updateLoadGenerator(RoutingContext context)
     {
-        updateLoadGenerator();
+        try {
+            final JsonObject jsonObject = context.body().asJsonObject();
+            updateLoadGenerator(jsonObject.getDouble("delay"));
+            context.response().setStatusCode(200).end();
+        }
+        catch (Exception e) {
+            LOGGER.error("Failed to update load generator", e);
+            context.response().setStatusCode(500).end();
+        }
     }
-    private void updateLoadGenerator()
+    private void updateLoadGenerator(final double delay)
     {
+        LOGGER.info("Updating load generator. " + delay);
         passCount.set(0);
         failCount.set(0);
 
