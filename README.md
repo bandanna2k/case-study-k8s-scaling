@@ -17,3 +17,11 @@ Ok to proceed? (y) y
 echo "org.gradle.java.home=/home/$USER/Code/buck-all/opt/jdk21" >> gradle.properties
 ./gradlew build
 ```
+
+- Build container
+```
+docker build -t load-generator .
+
+docker run -it -p 10200:10200 load-generator
+```
+
