@@ -29,3 +29,7 @@ docker build -t load-generator .
 docker run -it -p 10200:10200 load-generator
 ```
 
+- Get Status
+```
+curl -s http://localhost:10200/status | jq
+```

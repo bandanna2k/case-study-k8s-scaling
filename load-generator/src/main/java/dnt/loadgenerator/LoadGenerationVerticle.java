@@ -29,6 +29,7 @@ public class LoadGenerationVerticle extends AbstractVerticle
     private final Vertx vertx;
 
     private ScheduledExecutorService executor;
+    private long timerId = -1;
 
 
     public LoadGenerationVerticle(final Vertx vertx)
@@ -46,6 +47,7 @@ public class LoadGenerationVerticle extends AbstractVerticle
     {
         Router router = Router.router(vertx);
         router.route().handler(BodyHandler.create());
+        router.get("/status").handler(this::getStatus);
         router.post("/load").handler(this::updateLoadGenerator);
         routeFrontEnd(router);
 
@@ -64,6 +66,16 @@ public class LoadGenerationVerticle extends AbstractVerticle
                 });
     }
 
+    private void getStatus(RoutingContext routingContext)
+    {
+        routingContext.json(getStatus());
+    }
+
+    private Status getStatus()
+    {
+        return new Status(passCount.get(), failCount.get(), !executor.isShutdown());
+    }
+
     private void updateLoadGenerator(RoutingContext event)
     {
         updateLoadGenerator();
@@ -73,12 +85,18 @@ public class LoadGenerationVerticle extends AbstractVerticle
         passCount.set(0);
         failCount.set(0);
 
-        vertx.setPeriodic(5000, event1 -> {
-            if(failCount.get() > 10)
+        if(timerId > 0)
+        {
+            executor.shutdown();
+            vertx.cancelTimer(timerId);
+        }
+
+        timerId = vertx.setPeriodic(5000, event1 ->
+        {
+            if (failCount.get() > 10)
             {
                 executor.shutdown();
-                passCount.set(0);
-                failCount.set(0);
+                vertx.cancelTimer(timerId);
             }
         });
 
@@ -88,6 +106,7 @@ public class LoadGenerationVerticle extends AbstractVerticle
                     .send()
                     .onSuccess(resp -> {
                         JsonObject jsonObject = resp.bodyAsJsonObject();
+                        passCount.incrementAndGet();
                         LOGGER.info("Response: {}", jsonObject);
                     })
                     .onFailure(t -> {
@@ -103,4 +122,5 @@ public class LoadGenerationVerticle extends AbstractVerticle
                 .setCachingEnabled(false)
                 .setIndexPage("index.html"));
     }
+
 }
