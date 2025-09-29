@@ -18,10 +18,6 @@
         </div>
       </div>
 
-      <button class="submit-btn" @click="handleSubmit">
-        Start Load Generation
-      </button>
-
       <p>{{ message }}</p>
     </div>
   </div>
@@ -29,9 +25,10 @@
 
 <script>
 import {ref, computed} from 'vue'
+import PollingTimer from 'polling-timer';
 
 export default {
-  name: 'HelloWorld',
+  name: 'Load Generator',
   setup() {
     const sliderValue = ref(1000)
     const minValue = ref(100)
@@ -39,39 +36,47 @@ export default {
     const step = ref(100)
     const message = ref("")
 
+    const lastSubmittedValue = ref(1000)
     const displayValue = computed(() => {
       return sliderValue.value
     })
 
-    const handleSubmit = async () => {
-      console.log('displayValue.value:', displayValue.value);
-      await fetch('/v1/load', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-              delay: parseFloat(displayValue.value),
-            })
-          })
-          .then(response => {
-            if(response.status === 200) {
-              message.value = "Load generated at " + response.json();
-            }
-            else {
-              message.value = "Failed to generate load.";
-            }
-          })
-          .catch(reason => {
-            message.value = "Exception: " + reason;
-          });
-    }
+    const timer = new PollingTimer(1000, 0);
+    timer.setRunCallback(async () => {
+      if(displayValue.value !== lastSubmittedValue.value) {
+        lastSubmittedValue.value = displayValue.value;
+        await postDelay(lastSubmittedValue.value);
+      }
+    });
+    timer.start();
 
+    async function postDelay(delayMillis) {
+      await fetch('/v1/load', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          delay: parseInt(delayMillis),
+        })
+      })
+      .then(response => {
+        if(response.status === 200) {
+          message.value = "Firing every " + lastSubmittedValue.value + " ms.";
+        }
+        else {
+          message.value = "Failed to generate load.";
+        }
+      })
+      .catch(reason => {
+        message.value = "Exception: " + reason;
+      });
+    }
     return {
       sliderValue,
       minValue,
       maxValue,
       step,
+      lastSubmittedValue,
       displayValue,
-      handleSubmit,
       message
     }
   }
