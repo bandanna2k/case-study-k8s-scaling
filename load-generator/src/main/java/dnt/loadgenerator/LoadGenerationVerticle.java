@@ -1,5 +1,6 @@
 package dnt.loadgenerator;
 
+import io.netty.util.concurrent.DefaultThreadFactory;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -13,6 +14,7 @@ import io.vertx.ext.web.handler.StaticHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -28,8 +30,8 @@ public class LoadGenerationVerticle extends AbstractVerticle
     private final AtomicLong failCount = new AtomicLong();
     private final Vertx vertx;
 
-    private ScheduledExecutorService executor;
-    private long timerId = -1;
+    private long delayMillis = 1000;
+    private final ExecutorService executor;
 
 
     public LoadGenerationVerticle(final Vertx vertx)
@@ -40,6 +42,9 @@ public class LoadGenerationVerticle extends AbstractVerticle
         clientOptions.setConnectTimeout(1_000);
         clientOptions.setIdleTimeout(5_000);
         this.client = WebClient.create(vertx, clientOptions);
+
+        executor = Executors.newThreadPerTaskExecutor(
+                new DefaultThreadFactory("DefaultThreadFactory"));
     }
 
     @Override
@@ -57,13 +62,23 @@ public class LoadGenerationVerticle extends AbstractVerticle
                 .onSuccess(successfulHttpServer -> {
                     LOGGER.info("Server started on port " + successfulHttpServer.actualPort());
                     startPromise.complete();
-
-                    updateLoadGenerator(0.0);
                 })
                 .onFailure(t -> {
                     LOGGER.error("Failed to start server", t);
                     startPromise.fail("Failed to start server");
                 });
+        setTimer();
+    }
+
+    private void setTimer()
+    {
+        vertx.setTimer(delayMillis, aLong -> {
+            if(failCount.get() <= 10)
+            {
+                executor.submit(this::call);
+            }
+            setTimer();
+        });
     }
 
     private void getStatus(RoutingContext routingContext)
@@ -73,56 +88,23 @@ public class LoadGenerationVerticle extends AbstractVerticle
 
     private Status getStatus()
     {
-        return new Status(passCount.get(), failCount.get(), !executor.isShutdown());
+        return new Status(passCount.get(), failCount.get());
     }
 
     private void updateLoadGenerator(RoutingContext context)
     {
         try {
             final JsonObject jsonObject = context.body().asJsonObject();
-            updateLoadGenerator(jsonObject.getDouble("delay"));
+            delayMillis = jsonObject.getLong("delay");
+            passCount.set(0);
+            failCount.set(0);
+            LOGGER.info("Load generation delay set to {}(ms) ", delayMillis);
             context.response().setStatusCode(200).end();
         }
         catch (Exception e) {
             LOGGER.error("Failed to update load generator", e);
             context.response().setStatusCode(500).end();
         }
-    }
-    private void updateLoadGenerator(final double delay)
-    {
-        LOGGER.info("Updating load generator. " + delay);
-        passCount.set(0);
-        failCount.set(0);
-
-        if(timerId > 0)
-        {
-            executor.shutdown();
-            vertx.cancelTimer(timerId);
-        }
-
-        timerId = vertx.setPeriodic(5000, event1 ->
-        {
-            if (failCount.get() > 10)
-            {
-                executor.shutdown();
-                vertx.cancelTimer(timerId);
-            }
-        });
-
-        executor = Executors.newScheduledThreadPool(100);
-        executor.scheduleAtFixedRate(() -> {
-            client.get(10201, "localhost", "/request")
-                    .send()
-                    .onSuccess(resp -> {
-                        JsonObject jsonObject = resp.bodyAsJsonObject();
-                        passCount.incrementAndGet();
-                        LOGGER.info("Response: {}", jsonObject);
-                    })
-                    .onFailure(t -> {
-                        failCount.incrementAndGet();
-                        LOGGER.error("Failed to request");
-                    });
-        }, 0, 5000, TimeUnit.MILLISECONDS);
     }
 
     private void routeFrontEnd(Router router)
@@ -132,4 +114,18 @@ public class LoadGenerationVerticle extends AbstractVerticle
                 .setIndexPage("index.html"));
     }
 
+    private void call()
+    {
+        client.get(10201, "localhost", "/request")
+                .send()
+                .onSuccess(resp -> {
+                    JsonObject jsonObject = resp.bodyAsJsonObject();
+                    passCount.incrementAndGet();
+                    LOGGER.info("Response: {}", jsonObject);
+                })
+                .onFailure(t -> {
+                    failCount.incrementAndGet();
+                    LOGGER.error("Failed to request");
+                });
+    }
 }

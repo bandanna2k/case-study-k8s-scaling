@@ -14,7 +14,7 @@
             :step="step"
         />
         <div class="value-display">
-          {{ displayValue }} seconds
+          {{ displayValue }} milliseconds
         </div>
       </div>
 
@@ -33,14 +33,14 @@ import {ref, computed} from 'vue'
 export default {
   name: 'HelloWorld',
   setup() {
-    const sliderValue = ref(1.0)
-    const minValue = ref(0.1)
-    const maxValue = ref(10.0)
-    const step = ref(0.1)
+    const sliderValue = ref(1000)
+    const minValue = ref(100)
+    const maxValue = ref(10 * 1000)
+    const step = ref(100)
     const message = ref("")
 
     const displayValue = computed(() => {
-      return parseFloat(sliderValue.value).toFixed(1)
+      return sliderValue.value
     })
 
     const handleSubmit = async () => {
