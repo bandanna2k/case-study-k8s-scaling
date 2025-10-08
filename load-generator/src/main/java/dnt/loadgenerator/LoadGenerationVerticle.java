@@ -116,7 +116,7 @@ public class LoadGenerationVerticle extends AbstractVerticle
 
     private void call()
     {
-        client.get(10201, "localhost", "/request")
+        client.get(8080, "kubernetes-bootcamp", "/request")
                 .send()
                 .onSuccess(resp -> {
                     JsonObject jsonObject = resp.bodyAsJsonObject();

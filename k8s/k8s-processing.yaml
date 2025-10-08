@@ -1,10 +1,4 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: case-study
-#  labels:
-#    name: education
----
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -79,4 +73,3 @@ spec:
         - type: Pods
           value: 1
           periodSeconds: 30
----
