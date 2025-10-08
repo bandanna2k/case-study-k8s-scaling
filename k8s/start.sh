@@ -19,7 +19,11 @@ source current-state.sh
 
 source curl.sh
 
-kubectl logs -n case-study load-generator
+kubectl logs -f -n case-study load-generator
+
+#  USEFUL
+#  kubectl logs -n case-study load-generator
+#  kubectl exec -it  pod/load-generator -- sh
 
 set -x
 

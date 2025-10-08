@@ -11,6 +11,7 @@ import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.StaticHandler;
+import io.vertx.uritemplate.UriTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -116,16 +117,18 @@ public class LoadGenerationVerticle extends AbstractVerticle
 
     private void call()
     {
-        client.get(8080, "kubernetes-bootcamp", "/request")
+        int port = 8080;
+        String host = "kubernetes-bootcamp";
+        client.get(port, host, "/request")
                 .send()
                 .onSuccess(resp -> {
                     JsonObject jsonObject = resp.bodyAsJsonObject();
                     passCount.incrementAndGet();
-                    LOGGER.info("Response: {}", jsonObject);
+                    LOGGER.info("Response: {}:{} {}", host, port, jsonObject);
                 })
                 .onFailure(t -> {
                     failCount.incrementAndGet();
-                    LOGGER.error("Failed to request");
+                    LOGGER.error("Failed to request. {}:{}", host, port);
                 });
     }
 }
