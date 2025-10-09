@@ -1,2 +1,3 @@
 rootProject.name = 'case-study-k8s-scaling'
 include 'load-generator'
+include 'server'

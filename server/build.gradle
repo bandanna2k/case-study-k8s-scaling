@@ -1,0 +1,44 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    implementation          'com.fasterxml.jackson.core:jackson-databind:2.20.0'
+    implementation          'io.vertx:vertx-core:5.0.4'
+    implementation          'io.vertx:vertx-web:5.0.4'
+    implementation          'io.vertx:vertx-web-client:5.0.4'
+    implementation          'org.slf4j:slf4j-simple:2.0.17'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+application {
+    mainClass = 'dnt.server.Server'
+}
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': application.mainClass.get(),
+                'Implementation-Title': project.name,
+                'Implementation-Version': project.version
+        )
+    }
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}

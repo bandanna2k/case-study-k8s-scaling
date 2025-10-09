@@ -119,9 +119,9 @@ public class LoadGenerationVerticle extends AbstractVerticle
 
     private void call()
     {
-        int port = 8080;
-        String host = "kubernetes-bootcamp";
-        client.get(port, host, "/request")
+        int port = 10201;
+        String host = "case-study-server";
+        client.get(port, host, "/v1/status")
                 .send()
                 .onSuccess(resp -> {
                     passCount.incrementAndGet();

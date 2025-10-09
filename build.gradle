@@ -2,7 +2,7 @@ plugins {
     id 'java'
 }
 
-tasks.register('createDistribution', Copy) {
+tasks.register('copyLoadGeneratorJar', Copy) {
     dependsOn(":load-generator:jar")
 
     from("load-generator/build/libs")
@@ -16,7 +16,23 @@ tasks.register('createDistribution', Copy) {
         }
     }
 }
+tasks.register('copyServerJar', Copy) {
+    dependsOn(":server:jar")
+
+    from("server/build/libs")
+    into("dist")  // Standard distribution directory
+    include("*.jar")
+
+    doLast {
+        println("Distribution created in: dist/")
+        file("dist").listFiles().each {
+            println("  - ${it.name}")
+        }
+    }
+}
+
 tasks.named('build')
 {
-    dependsOn("createDistribution")
+    dependsOn("copyLoadGeneratorJar")
+    dependsOn("copyServerJar")
 }

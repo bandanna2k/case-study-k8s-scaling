@@ -3,21 +3,21 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   namespace: case-study
-  name: the-deployment
+  name: case-study-deployment
 spec:
   selector:
     matchLabels:
-      run: kubernetes-bootcamp
+      run: case-study-server
   template:
     metadata:
       labels:
-        run: kubernetes-bootcamp
+        run: case-study-server
     spec:
       containers:
-        - name: kubernetes-bootcamp
-          image: 'gcr.io/google-samples/kubernetes-bootcamp:v1'
+        - name: case-study-server
+          image: 'case-study-server:2025-10-09'
           ports:
-            - containerPort: 8080
+            - containerPort: 10201
           resources:
             requests:
               memory: "64Mi"
@@ -30,15 +30,13 @@ apiVersion: v1
 kind: Service
 metadata:
   namespace: case-study
-  name: kubernetes-bootcamp
-  labels:
-    run: kubernetes-bootcamp
+  name: case-study-service
 spec:
   type: NodePort
   ports:
-    - port: 8080
+    - port: 10201
   selector:
-    run: kubernetes-bootcamp
+    run: case-study-server
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler

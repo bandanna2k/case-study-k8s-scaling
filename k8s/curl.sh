@@ -1,7 +1,7 @@
 
 echo "1. Checking kubernetes-bootcamp webserver..."
 IP=`minikube ip`
-URL=`minikube service -n case-study kubernetes-bootcamp --url`
+URL=`minikube service -n case-study case-study-service --url`
 
 curl -I -X GET $URL
 echo "1. Done"
