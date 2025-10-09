@@ -4,9 +4,11 @@ import io.netty.util.concurrent.DefaultThreadFactory;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.ext.web.handler.BodyHandler;
@@ -122,13 +124,23 @@ public class LoadGenerationVerticle extends AbstractVerticle
         client.get(port, host, "/request")
                 .send()
                 .onSuccess(resp -> {
-                    JsonObject jsonObject = resp.bodyAsJsonObject();
                     passCount.incrementAndGet();
-                    LOGGER.info("Response: {}:{} {}", host, port, jsonObject);
+                    handleResponse(resp, host, port);
                 })
                 .onFailure(t -> {
                     failCount.incrementAndGet();
                     LOGGER.error("Failed to request. {}:{}", host, port);
                 });
+    }
+
+    private static void handleResponse(final HttpResponse<Buffer> resp, String host, int port)
+    {
+        try {
+            JsonObject jsonObject = resp.bodyAsJsonObject();
+            LOGGER.info("Response: {}:{} {}", host, port, jsonObject);
+        }
+        catch (Exception e) {
+            LOGGER.error("Failed to handle response: {}:{} {}", host, port, resp.bodyAsString());
+        }
     }
 }
