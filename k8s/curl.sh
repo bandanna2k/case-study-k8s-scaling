@@ -1,5 +1,5 @@
-
-echo "1. Checking kubernetes-bootcamp webserver..."
+set -x
+echo "1. Checking webserver..."
 IP=`minikube ip`
 URL=`minikube service -n case-study case-study-service --url`
 

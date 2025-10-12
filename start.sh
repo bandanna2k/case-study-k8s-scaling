@@ -39,8 +39,6 @@ echo "Starting k8s"
 
   minikube kubectl -- apply -f k8s-name-space.yaml
   minikube kubectl -- apply -f k8s-case-study-server.yaml
-  minikube kubectl -- wait pod --all --for=condition=Ready --namespace=case-study --timeout=120s
-
   minikube kubectl -- apply -f k8s-load-generation.yaml
   minikube kubectl -- wait pod --all --for=condition=Ready --namespace=case-study --timeout=120s
 
@@ -50,7 +48,7 @@ echo "Starting k8s"
 
   #  USEFUL
   #  kubectl logs -f -n case-study load-generator
-  #  kubectl exec -it  pod/load-generator -- sh
+  #   kubectl exec -it -n case-study pod/load-generator -- sh
 
   set -x
 )

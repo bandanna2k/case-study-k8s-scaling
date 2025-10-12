@@ -120,7 +120,7 @@ public class LoadGenerationVerticle extends AbstractVerticle
     private void call()
     {
         int port = 10201;
-        String host = "case-study-server";
+        String host = "case-study-service";
         client.get(port, host, "/v1/status")
                 .send()
                 .onSuccess(resp -> {
@@ -129,7 +129,7 @@ public class LoadGenerationVerticle extends AbstractVerticle
                 })
                 .onFailure(t -> {
                     failCount.incrementAndGet();
-                    LOGGER.error("Failed to request. {}:{}", host, port);
+                    LOGGER.error("Failed to request. {}:{} {}", host, port, t.getMessage());
                 });
     }
 
