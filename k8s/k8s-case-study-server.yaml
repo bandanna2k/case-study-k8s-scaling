@@ -38,36 +38,21 @@ spec:
   selector:
     run: case-study-server
 ---
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
 metadata:
+  name: auto-scaler
   namespace: case-study
-  name: hpa
 spec:
   scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: the-deployment
-  minReplicas: 1
-  maxReplicas: 10
-  metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 50
-  behavior:
-    scaleUp:
-      stabilizationWindowSeconds: 0
-      selectPolicy: Max
-      policies:
-        - type: Percent
-          value: 100      # Scale up by max 100% of current replicas
-          periodSeconds: 10
-    scaleDown:
-      stabilizationWindowSeconds: 30  # Default is 300s (5 min)
-      policies:
-        - type: Pods
-          value: 1
-          periodSeconds: 30
+    name: case-study-deployment
+  minReplicaCount: 1
+  maxReplicaCount: 10
+  pollingInterval: 2
+  cooldownPeriod: 10
+  triggers:
+    - type: metrics-api
+      metadata:
+        targetValue: "2"
+        url: "http://case-study-service.case-study.svc.cluster.local:10201/metrics/rps"
+        valueLocation: "requestsPerSecond"

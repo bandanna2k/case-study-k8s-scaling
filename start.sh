@@ -33,6 +33,10 @@ echo "Starting k8s"
   minikube addons enable metrics-server
   minikube kubectl -- wait pod --all --for=condition=Ready --namespace=kube-system --timeout=60s
 
+  # Install KEDA (K8S event driven auto-scaling)
+  minikube kubectl -- apply --server-side -f https://github.com/kedacore/keda/releases/download/v2.11.2/keda-2.11.2.yaml
+  minikube kubectl -- wait pod --all --for=condition=Ready --namespace=keda --timeout=60s
+
   # Upload into minikube, the load generator image
   minikube image load case-study-server:2025-10-09
   minikube image load load-generator:2025-10-08
@@ -49,6 +53,8 @@ echo "Starting k8s"
   #  USEFUL
   #  kubectl logs -f -n case-study load-generator
   #   kubectl exec -it -n case-study pod/load-generator -- sh
+  #  Debug KEDA
+  # kubectl logs -n keda deployment/keda-operator --tail=100 -f
 
   set -x
 )
