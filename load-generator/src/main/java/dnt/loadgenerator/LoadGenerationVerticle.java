@@ -44,6 +44,7 @@ public class LoadGenerationVerticle extends AbstractVerticle
         final WebClientOptions clientOptions = new WebClientOptions();
         clientOptions.setConnectTimeout(1_000);
         clientOptions.setIdleTimeout(5_000);
+        clientOptions.setKeepAlive(false);
         this.client = WebClient.create(vertx, clientOptions);
 
         executor = Executors.newThreadPerTaskExecutor(
