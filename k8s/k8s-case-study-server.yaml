@@ -47,12 +47,13 @@ spec:
   scaleTargetRef:
     name: case-study-deployment
   minReplicaCount: 1
-  maxReplicaCount: 10
-  pollingInterval: 2
-  cooldownPeriod: 10
+  maxReplicaCount: 20
+  pollingInterval: 5
+  cooldownPeriod: 5
   triggers:
     - type: metrics-api
       metadata:
-        targetValue: "2"
+        activationTargetValue: "0.5"
+        targetValue: "1"
         url: "http://case-study-service.case-study.svc.cluster.local:10201/metrics/rps"
         valueLocation: "requestsPerSecond"
