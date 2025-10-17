@@ -18,8 +18,8 @@ echo '----------------- REPLICA SETS -----------------'
 kubectl get rs -A
 echo
 
-# echo '----------------- HORIZONTAL POD AUTOSCALERS -----------------'
-# kubectl get hpa -A
+echo '----------------- HORIZONTAL POD AUTOSCALERS -----------------'
+kubectl get hpa -A
 
 echo '----------------- SCALED OBJECTS -----------------'
 kubectl get scaledobjects -A
