@@ -14,6 +14,11 @@ public final class Metrics {
         recentRequests = 0;
         startTime = now;
 
+        // Scale down
+        if(requestsPerSecond < 0.5)
+        {
+            requestsPerSecond = 0;
+        }
         return requestsPerSecond();
     }
 

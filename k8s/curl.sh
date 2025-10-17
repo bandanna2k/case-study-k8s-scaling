@@ -1,9 +1,12 @@
 
+set -x
+
 echo "1. Checking webserver..."
 IP=`minikube ip`
 URL=`minikube service -n case-study case-study-service --url`
 
-curl -s -I -X GET $URL/v1/status
+#curl -s -I -X GET $URL/v1/status
+#curl -s $URL/v1/status
 curl -s $URL/metrics/rps
 
 echo

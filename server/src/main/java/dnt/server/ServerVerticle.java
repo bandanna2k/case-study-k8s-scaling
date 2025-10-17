@@ -61,7 +61,8 @@ public class ServerVerticle extends AbstractVerticle
 
     private void getRequestsPerSecond(RoutingContext context) {
 
-        double rps = metrics.recalculateRequestsPerSecond();
+        metrics.recalculateRequestsPerSecond();
+        double rps = metrics.requestsPerSecond();
         String metrics = """
 # HELP http_requests_per_second Current requests per second
 # TYPE http_requests_per_second gauge
