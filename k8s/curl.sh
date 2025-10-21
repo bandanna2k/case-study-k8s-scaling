@@ -6,10 +6,17 @@ IP=`minikube ip`
 URL=`minikube service -n case-study case-study-service --url`
 
 #curl -s -I -X GET $URL/v1/status
-#curl -s $URL/v1/status
-curl -s $URL/metrics/rps
 
+curl -s $URL/v1/status
 echo
+
+curl -s $URL/metrics/rps
+echo
+
+curl -s -X POST -d "{'bytes': 1048576}" $URL/v1/memory
+echo
+
+
 echo "1. Done"
 
 

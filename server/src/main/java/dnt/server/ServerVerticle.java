@@ -1,7 +1,6 @@
 package dnt.server;
 
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.Router;
@@ -11,6 +10,8 @@ import io.vertx.ext.web.handler.BodyHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class ServerVerticle extends AbstractVerticle
@@ -19,6 +20,7 @@ public class ServerVerticle extends AbstractVerticle
 
     private final Vertx vertx;
     private final Metrics metrics;
+    private final List<byte[]> garbage = new ArrayList<>();
 
     public ServerVerticle(final Vertx vertx)
     {
@@ -42,6 +44,11 @@ public class ServerVerticle extends AbstractVerticle
         router.get("/metrics").handler(this::getRequestsPerSecond);
         router.get("/metrics/rps").handler(this::getMetrics);
 
+        router.post("/v1/memory").handler(routingContext -> {
+            metrics.incrementRequests();
+            addMemory(routingContext);
+        });
+
         vertx.createHttpServer()
                 .requestHandler(router)
                 .listen(10201)
@@ -53,6 +60,23 @@ public class ServerVerticle extends AbstractVerticle
                     LOGGER.error("Failed to start server", t);
                     startPromise.fail("Failed to start server");
                 });
+    }
+
+    private void addMemory(RoutingContext routingContext) {
+        Map<String, Object> data = routingContext.data();
+        try {
+            int count = Integer.parseInt(String.valueOf(data.get("bytes")));
+            addMemory(count);
+            routingContext.response().setStatusCode(200).end();
+        }
+        catch (Exception ex)
+        {
+            routingContext.response().setStatusCode(400).end();
+        }
+    }
+
+    private void addMemory(int count) {
+        garbage.add(new byte[count]);
     }
 
     private void getMetrics(RoutingContext context) {
@@ -79,6 +103,6 @@ http_requests_total {request_count}
 
     private void getStatus(RoutingContext routingContext)
     {
-        routingContext.json(new Status());
+        routingContext.json(new Status(garbage.size()));
     }
 }

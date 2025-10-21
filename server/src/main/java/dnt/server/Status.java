@@ -10,9 +10,11 @@ public class Status
 
     public final long id;
     public final String hostname;
+    public final int size;
 
-    Status()
+    Status(int size)
     {
+        this.size = size;
         id = counter.incrementAndGet();
         try
         {
