@@ -21,6 +21,6 @@ echo
 echo '----------------- HORIZONTAL POD AUTOSCALERS -----------------'
 kubectl get hpa -A
 
-echo '----------------- SCALED OBJECTS -----------------'
-kubectl get scaledobjects -A
+#echo '----------------- SCALED OBJECTS -----------------'
+#kubectl get scaledobjects -A
 

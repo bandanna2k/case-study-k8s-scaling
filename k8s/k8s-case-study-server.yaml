@@ -38,22 +38,41 @@ spec:
   selector:
     run: case-study-server
 ---
-apiVersion: keda.sh/v1alpha1
-kind: ScaledObject
+apiVersion: v1
+kind: ConfigMap
 metadata:
-  name: auto-scaler
+  name: adapter-config
+  namespace: case-study
+data:
+  rules.yaml: |
+    rules:
+      - seriesQuery: 'custom_metric'
+        resources:
+          overrides:
+            namespace: {resource: "namespace"}
+            pod: {resource: "pod"}
+        name:
+          matches: "^(.*)"
+          as: "${1}"
+        metricsQuery: '${metric}'
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hpa
   namespace: case-study
 spec:
   scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
     name: case-study-deployment
-  minReplicaCount: 1
-  maxReplicaCount: 20
-  pollingInterval: 5
-  cooldownPeriod: 5
-  triggers:
-    - type: metrics-api
-      metadata:
-        activationTargetValue: "0.5"
-        targetValue: "1"
-        url: "http://case-study-service.case-study.svc.cluster.local:10201/metrics/rps"
-        valueLocation: "requestsPerSecond"
+  minReplicas: 1
+  maxReplicas: 20
+  metrics:
+    - type: Pods
+      pods:
+        metric:
+          name: http_requests_per_second
+        target:
+          type: AverageValue
+          averageValue: "1"  # scale up if avg > 1 req/s per pod

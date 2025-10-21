@@ -34,8 +34,12 @@ echo "Starting k8s"
   minikube kubectl -- wait pod --all --for=condition=Ready --namespace=kube-system --timeout=60s
 
   # Install KEDA (K8S event driven auto-scaling)
-  minikube kubectl -- apply --server-side -f https://github.com/kedacore/keda/releases/download/v2.11.2/keda-2.11.2.yaml
-  minikube kubectl -- wait pod --all --for=condition=Ready --namespace=keda --timeout=120s
+#  minikube kubectl -- apply --server-side -f https://github.com/kedacore/keda/releases/download/v2.11.2/keda-2.11.2.yaml
+#  minikube kubectl -- wait pod --all --for=condition=Ready --namespace=keda --timeout=120s
+
+  # Install prometheus adapter
+  minikube kubectl -- apply -f k8s-prometheus-adapter.yaml
+  minikube kubectl -- wait pod --all --for=condition=Ready --namespace=case-study --timeout=120s
 
   # Upload into minikube, the load generator image
   minikube image load case-study-server:2025-10-09
