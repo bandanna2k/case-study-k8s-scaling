@@ -20,11 +20,11 @@ spec:
             - containerPort: 10201
           resources:
             requests:
-              memory: "64Mi"
+              memory: "256Mi"
               cpu: "250m"
             limits:
-              memory: "128Mi"
-              cpu: "500m"
+              memory: "256Mi"
+              cpu: "250m"
 ---
 apiVersion: v1
 kind: Service
@@ -37,24 +37,6 @@ spec:
     - port: 10201
   selector:
     run: case-study-server
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: adapter-config
-  namespace: case-study
-data:
-  rules.yaml: |
-    rules:
-      - seriesQuery: 'custom_metric'
-        resources:
-          overrides:
-            namespace: {resource: "namespace"}
-            pod: {resource: "pod"}
-        name:
-          matches: "^(.*)"
-          as: "${1}"
-        metricsQuery: '${metric}'
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
@@ -69,10 +51,24 @@ spec:
   minReplicas: 1
   maxReplicas: 20
   metrics:
-    - type: Pods
-      pods:
-        metric:
-          name: http_requests_per_second
+    - type: Resource
+      resource:
+        name: memory
         target:
-          type: AverageValue
-          averageValue: "1"  # scale up if avg > 1 req/s per pod
+          type: Utilization
+          averageUtilization: 75
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0  # Scale up immediately
+      policies:
+        - type: Percent
+          value: 100  # Double the pods
+          periodSeconds: 10  # Every 15 seconds (How often the policy can be applied)
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 10  # Very short cooldown
+      policies:
+        - type: Percent
+          value: 50  # Cut pods in half
+          periodSeconds: 15  # Every 15 seconds
+      selectPolicy: Max

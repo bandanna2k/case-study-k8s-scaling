@@ -1,5 +1,8 @@
 
-source stop.sh
+(
+  cd k8s
+  source stop.sh
+)
 
 echo "Building everything. Load generator."
 
@@ -9,37 +12,36 @@ echo "Building everything. Load generator."
 echo "Building load generator image"
 (
   cd load-generator
-
   source build-image.sh
 )
 
 echo "Building server image"
 (
   cd server
-
   source build-image.sh
 )
 
 echo "Starting k8s"
 (
-  set -e
-
   cd k8s/
-
   source lint.sh
 
-  # Start and wait to be ready
+  echo "Start and wait to be ready"
   minikube start
   minikube addons enable metrics-server
-  minikube kubectl -- wait pod --all --for=condition=Ready --namespace=kube-system --timeout=60s
+  minikube kubectl -- wait --for=condition=Ready     -n kube-system --timeout=60s pod --all
+  minikube kubectl -- wait --for=condition=Available -n kube-system --timeout=60s deployment/metrics-server
+
+  # minikube kubectl -- get deployment metrics-server -n kube-system -o json | jq '.spec.template.spec.containers[0].args'
+  echo "Patch metrics server (for HPA)"
+  minikube kubectl -- patch deployment metrics-server -n kube-system --patch-file k8s-patch-for-metrics-server.yaml
+  minikube kubectl -- rollout status deployment/metrics-server -n kube-system
+  minikube kubectl -- wait --for=condition=Ready     -n kube-system --timeout=60s pod --all
+  minikube kubectl -- wait --for=condition=Available -n kube-system --timeout=60s deployment/metrics-server
 
   # Install KEDA (K8S event driven auto-scaling)
 #  minikube kubectl -- apply --server-side -f https://github.com/kedacore/keda/releases/download/v2.11.2/keda-2.11.2.yaml
 #  minikube kubectl -- wait pod --all --for=condition=Ready --namespace=keda --timeout=120s
-
-  # Install prometheus adapter
-  minikube kubectl -- apply -f k8s-prometheus-adapter.yaml
-  minikube kubectl -- wait pod --all --for=condition=Ready --namespace=case-study --timeout=120s
 
   # Upload into minikube, the load generator image
   minikube image load case-study-server:2025-10-09
@@ -47,6 +49,9 @@ echo "Starting k8s"
 
   minikube kubectl -- apply -f k8s-name-space.yaml
   minikube kubectl -- apply -f k8s-case-study-server.yaml
+  minikube start --extra-config=controller-manager.horizontal-pod-autoscaler-sync-period=10s
+  minikube kubectl -- wait pod --all --for=condition=Ready --namespace=case-study --timeout=120s
+
   minikube kubectl -- apply -f k8s-load-generation.yaml
   minikube kubectl -- wait pod --all --for=condition=Ready --namespace=case-study --timeout=120s
 

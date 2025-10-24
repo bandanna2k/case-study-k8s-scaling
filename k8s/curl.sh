@@ -1,6 +1,4 @@
 
-set -x
-
 echo "1. Checking webserver..."
 IP=`minikube ip`
 URL=`minikube service -n case-study case-study-service --url`
@@ -13,7 +11,13 @@ echo
 curl -s $URL/metrics/rps
 echo
 
-curl -s -X POST -d "{'bytes': 1048576}" $URL/v1/memory
+echo "DELETE /v1/memory"
+curl -i -X DELETE $URL/v1/memory
+echo
+
+echo "POST /v1/memory"
+curl -i -X POST -d '{"bytes": 1048576}' $URL/v1/memory
+curl -s $URL/v1/status
 echo
 
 

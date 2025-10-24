@@ -3,6 +3,7 @@ package dnt.server;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.client.WebClientOptions;
@@ -48,6 +49,11 @@ public class ServerVerticle extends AbstractVerticle
             metrics.incrementRequests();
             addMemory(routingContext);
         });
+        router.delete("/v1/memory").handler(routingContext -> {
+            metrics.incrementRequests();
+            garbage.clear();
+            routingContext.response().setStatusCode(200).end();
+        });
 
         vertx.createHttpServer()
                 .requestHandler(router)
@@ -63,14 +69,15 @@ public class ServerVerticle extends AbstractVerticle
     }
 
     private void addMemory(RoutingContext routingContext) {
-        Map<String, Object> data = routingContext.data();
+        JsonObject jsonObject = routingContext.body().asJsonObject();
         try {
-            int count = Integer.parseInt(String.valueOf(data.get("bytes")));
+            int count = jsonObject.getInteger("bytes");
             addMemory(count);
             routingContext.response().setStatusCode(200).end();
         }
         catch (Exception ex)
         {
+            LOGGER.error("Failed to add memory. {}", ex.getMessage());
             routingContext.response().setStatusCode(400).end();
         }
     }
