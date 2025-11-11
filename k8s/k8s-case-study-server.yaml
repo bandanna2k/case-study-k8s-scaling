@@ -5,6 +5,7 @@ metadata:
   namespace: case-study
   name: case-study-deployment
 spec:
+  replicas: 4
   selector:
     matchLabels:
       run: case-study-server
@@ -37,38 +38,38 @@ spec:
     - port: 10201
   selector:
     run: case-study-server
----
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: hpa
-  namespace: case-study
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: case-study-deployment
-  minReplicas: 1
-  maxReplicas: 20
-  metrics:
-    - type: Resource
-      resource:
-        name: memory
-        target:
-          type: Utilization
-          averageUtilization: 75
-  behavior:
-    scaleUp:
-      stabilizationWindowSeconds: 0  # Scale up immediately
-      policies:
-        - type: Percent
-          value: 100  # Double the pods
-          periodSeconds: 10  # Every 15 seconds (How often the policy can be applied)
-      selectPolicy: Max
-    scaleDown:
-      stabilizationWindowSeconds: 10  # Very short cooldown
-      policies:
-        - type: Percent
-          value: 50  # Cut pods in half
-          periodSeconds: 15  # Every 15 seconds
-      selectPolicy: Max
+#---
+#apiVersion: autoscaling/v2
+#kind: HorizontalPodAutoscaler
+#metadata:
+#  name: hpa
+#  namespace: case-study
+#spec:
+#  scaleTargetRef:
+#    apiVersion: apps/v1
+#    kind: Deployment
+#    name: case-study-deployment
+#  minReplicas: 1
+#  maxReplicas: 20
+#  metrics:
+#    - type: Resource
+#      resource:
+#        name: memory
+#        target:
+#          type: Utilization
+#          averageUtilization: 60
+#  behavior:
+#    scaleUp:
+#      stabilizationWindowSeconds: 0  # Scale up immediately
+#      policies:
+#        - type: Percent
+#          value: 100  # Double the pods
+#          periodSeconds: 10  # Every 15 seconds (How often the policy can be applied)
+#      selectPolicy: Max
+#    scaleDown:
+#      stabilizationWindowSeconds: 10  # Very short cooldown
+#      policies:
+#        - type: Percent
+#          value: 50  # Cut pods in half
+#          periodSeconds: 15  # Every 15 seconds
+#      selectPolicy: Max

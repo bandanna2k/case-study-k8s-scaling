@@ -65,5 +65,14 @@ echo "Starting k8s"
   #  Debug KEDA
   # kubectl logs -n keda deployment/keda-operator --tail=100 -f
 
+  # USEFUL
+
+  # Get Load Generator logs
+  # kubectl logs -f -n case-study load-generator
+
+  # Check if metrics are available quickly
+  # kubectl top pods -n case-study
+
+
   set -x
 )
