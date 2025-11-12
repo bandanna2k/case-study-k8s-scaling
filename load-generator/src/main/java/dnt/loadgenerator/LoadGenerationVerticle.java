@@ -5,6 +5,7 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
@@ -17,6 +18,8 @@ import io.vertx.uritemplate.UriTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -35,6 +38,7 @@ public class LoadGenerationVerticle extends AbstractVerticle
 
     private long delayMillis = 1000;
     private final ExecutorService executor;
+    private final JsonArray results = new JsonArray();
 
 
     public LoadGenerationVerticle(final Vertx vertx)
@@ -57,6 +61,7 @@ public class LoadGenerationVerticle extends AbstractVerticle
         Router router = Router.router(vertx);
         router.route().handler(BodyHandler.create());
         router.get("/v1/status").handler(this::getStatus);
+        router.get("/v1/results").handler(this::getResults);
         router.post("/v1/load").handler(this::updateLoadGenerator);
         routeFrontEnd(router);
 
@@ -72,6 +77,10 @@ public class LoadGenerationVerticle extends AbstractVerticle
                     startPromise.fail("Failed to start server");
                 });
         setTimer();
+    }
+
+    private void getResults(RoutingContext context) {
+        context.json(results);
     }
 
     private void setTimer()
@@ -134,14 +143,23 @@ public class LoadGenerationVerticle extends AbstractVerticle
                 });
     }
 
-    private static void handleResponse(final HttpResponse<Buffer> resp, String host, int port)
+    private void handleResponse(final HttpResponse<Buffer> resp, String host, int port)
     {
         try {
             JsonObject jsonObject = resp.bodyAsJsonObject();
+            addResult(jsonObject);
             LOGGER.info("Response: {}:{} {}", host, port, jsonObject);
         }
         catch (Exception e) {
             LOGGER.error("Failed to handle response: {}:{} {}", host, port, resp.bodyAsString());
+        }
+    }
+
+    private void addResult(JsonObject jsonObject) {
+        results.add(jsonObject);
+        if(results.size() > 100)
+        {
+            results.remove(0);
         }
     }
 }

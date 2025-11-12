@@ -21,6 +21,10 @@ curl -s $URL/v1/status
 echo
 
 
+#LOAD_GEN_BASE_URL=`minikube service -n case-study load-generator-service --url`
+#echo "RESULTS"
+#curl -s -X GET $LOAD_GEN_BASE_URL/v1/results | jq
+
 echo "1. Done"
 
 
