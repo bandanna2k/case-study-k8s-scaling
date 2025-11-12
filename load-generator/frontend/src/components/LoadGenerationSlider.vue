@@ -16,6 +16,9 @@
         <div class="value-display">
           {{ displayValue }} milliseconds
         </div>
+        <div>
+          {{ displayResults }}
+        </div>
       </div>
 
       <p>{{ message }}</p>
@@ -35,10 +38,14 @@ export default {
     const maxValue = ref(10 * 1000)
     const step = ref(100)
     const message = ref("")
+    const results = ref("")
 
     const lastSubmittedValue = ref(1000)
     const displayValue = computed(() => {
       return sliderValue.value
+    })
+    const displayResults = computed(() => {
+      return results.value
     })
 
     const timer = new PollingTimer(1000, 0);
@@ -47,6 +54,7 @@ export default {
         lastSubmittedValue.value = displayValue.value;
         await postDelay(lastSubmittedValue.value);
       }
+      setResults();
     });
     timer.start();
 
@@ -70,6 +78,26 @@ export default {
         message.value = "Exception: " + reason;
       });
     }
+
+    async function setResults() {
+      await fetch('/v1/results', { method: 'GET' })
+          .then(response => {
+            if(response.status === 200) {
+              return response.json();
+            }
+            else {
+              message.value = "Failed to get results.";
+              throw new Error("Failed to get results.")
+            }
+          })
+          .then(r => {
+            results.value = r;
+          })
+          .catch(reason => {
+            message.value = "Exception: " + reason;
+          });
+    }
+
     return {
       sliderValue,
       minValue,
@@ -77,6 +105,7 @@ export default {
       step,
       lastSubmittedValue,
       displayValue,
+      displayResults,
       message
     }
   }
